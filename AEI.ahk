@@ -1,13 +1,11 @@
 ; AEI.ahk - by joedf
-; Revision Date : 13:01 2015/01/07
+; Revision Date : 16:35 2015/01/07
 ; Tested On AutoHotkey Version: 1.1.19.01
 #NoTrayIcon
 #SingleInstance, Off
 
 CHECK_FOR_UPDATES := true
 ScriptName:="AutoHotkey Environment Information"
-
-gosub,GetInfo
 
 VarList=
 (
@@ -29,6 +27,8 @@ MPRESS_IsPresent
 
 ;;////////////////////////////// SETUP Display and Variable parse...
 ;{
+	Ahk_CompilerPath	:=	getCompiler()
+	Ahk_WindowSpyPath	:=	getWindowSpy()
 
 	Gui +LastFound -Caption +Border +hwndhGUI
 	Gui, Margin, 4, 4
@@ -44,16 +44,21 @@ MPRESS_IsPresent
 	Gui, Add, Button,gGuiClose hp w100 x+4 yp,Exit
 	Gui, Add, Text, +center w106 x+4 yp+0 h16 cGray +Border vUpdateInfo, Checking...
 
-	Loop, Parse, VarList, `n, `r
-		if (i:=A_LoopField)
-			d:=%i%, Parse_append(Message,i,d), LV_Add("",i,d)
-	StringTrimRight,Message,Message,1
-
+	LV_Add("","Loading","System & Environment information ...")
 	LV_ModifyCol(1,112)
 	LV_ModifyCol(2,330)
 	Gui, Show,, % ScriptName
 	GroupAdd,MainGUI,ahk_id %hGUI%
 	OnMessage(0x201, "WM_LBUTTONDOWN") ;Enable Draggable GUI
+	
+	gosub,GetInfo
+	
+	LV_Delete()
+	Loop, Parse, VarList, `n, `r
+		if (i:=A_LoopField)
+			d:=%i%, Parse_append(Message,i,d), LV_Add("",i,d)
+	StringTrimRight,Message,Message,1
+	
 	gosub,CheckUpdate
 	return
 
@@ -76,8 +81,6 @@ Copy:
 GetInfo:
 	Ahk_Flavour			:=	(A_PtrSize*8) "-bit"
 	Ahk_IsInstalled		:=	isInstalled()
-	Ahk_CompilerPath	:=	getCompiler()
-	Ahk_WindowSpyPath	:=	getWindowSpy()
 	MPRESS_IsPresent	:=	(!!FileExist(Ahk_CompilerPath "\..\MPRESS.exe"))?"1 (true)":"0 (false)"
 	SystemLocale		:=	getSysLocale() " (0x" A_Language ")"
 	SystemScreen		:=	A_ScreenWidth "x" A_ScreenHeight " (" A_ScreenDPI " DPI)"
