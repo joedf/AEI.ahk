@@ -40,13 +40,14 @@ MPRESS_IsPresent
 	Gui, Add, Picture,w16 h16 Icon1, %A_ahkpath%
 	Gui, Add, Picture,wp hp Icon1 x+4 yp, %Ahk_CompilerPath%
 	Gui, Add, Picture,wp hp Icon1 x+4 yp, %Ahk_WindowSpyPath%
-	Gui, Add, Button,gCopy hp x+4 yp w176,Copy All to Clipboard
+	Gui, Add, Button,gCopy hp x+4 yp w176 vCopyButton,Copy All to Clipboard
 	Gui, Add, Button,gGuiClose hp w100 x+4 yp,Exit
 	Gui, Add, Text, +center w106 x+4 yp+0 h16 cGray +Border vUpdateInfo, Checking...
 
 	LV_Add("","Loading","System & Environment information ...")
 	LV_ModifyCol(1,112)
 	LV_ModifyCol(2,330)
+	GuiControl,+Disabled,CopyButton
 	Gui, Show,, % ScriptName
 	GroupAdd,MainGUI,ahk_id %hGUI%
 	OnMessage(0x201, "WM_LBUTTONDOWN") ;Enable Draggable GUI
@@ -58,6 +59,8 @@ MPRESS_IsPresent
 		if (i:=A_LoopField)
 			d:=%i%, Parse_append(Message,i,d), LV_Add("",i,d)
 	StringTrimRight,Message,Message,1
+	
+	GuiControl,-Disabled,CopyButton
 	
 	gosub,CheckUpdate
 	return
