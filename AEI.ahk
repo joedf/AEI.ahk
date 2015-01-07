@@ -29,6 +29,11 @@ MPRESS_IsPresent
 ;{
 	Ahk_CompilerPath	:=	getCompiler()
 	Ahk_WindowSpyPath	:=	getWindowSpy()
+	
+	; see "'Borderless' buttons on dark backgrounds" by just me
+	; http://ahkscript.org/boards/viewtopic.php?f=7&t=4029
+	WM_CTLCOLORBTNBrush	:=	DllCall("Gdi32.dll\CreateSolidBrush", "UInt", 0x202020, "UPtr")
+	BS_FLAT:="0x8000"
 
 	Gui +LastFound -Caption +Border +hwndhGUI
 	Gui, Margin, 4, 4
@@ -40,17 +45,20 @@ MPRESS_IsPresent
 	Gui, Add, Picture,w16 h16 Icon1, %A_ahkpath%
 	Gui, Add, Picture,wp hp Icon1 x+4 yp, %Ahk_CompilerPath%
 	Gui, Add, Picture,wp hp Icon1 x+4 yp, %Ahk_WindowSpyPath%
-	Gui, Add, Button,gCopy hp x+4 yp w176 vCopyButton,Copy All to Clipboard
-	Gui, Add, Button,gGuiClose hp w100 x+4 yp,Exit
+	Gui, Add, Button,gCopy hp x+4 yp w176 vCopyButton +%BS_FLAT% -theme hwndhCopyButton,Copy All to Clipboard
+	Gui, Add, Button,gGuiClose hp w100 x+4 yp +%BS_FLAT% -theme hwndhExitButton,Exit
 	Gui, Add, Text, +center w106 x+4 yp+0 h16 cGray +Border vUpdateInfo, Checking...
 
 	LV_Add("","Loading","System & Environment information ...")
 	LV_ModifyCol(1,112)
 	LV_ModifyCol(2,330)
+	OnMessage(0x201, "WM_LBUTTONDOWN") ;Enable Draggable GUI
+	OnMessage(0x0135, "WM_CTLCOLORBTN")
 	GuiControl,+Disabled,CopyButton
+	
 	Gui, Show,, % ScriptName
 	GroupAdd,MainGUI,ahk_id %hGUI%
-	OnMessage(0x201, "WM_LBUTTONDOWN") ;Enable Draggable GUI
+	WinSet, Redraw ; uses th last found window
 	
 	gosub,GetInfo
 	
@@ -77,6 +85,10 @@ WM_LBUTTONDOWN() {
 		;http://www.autohotkey.com/board/topic/80594-how-to-enable-drag-for-a-gui-without-a-titlebar/#entry60075
 		#If
 	#IfWinActive
+}
+WM_CTLCOLORBTN() {
+	Global WM_CTLCOLORBTNBrush
+	Return WM_CTLCOLORBTNBrush
 }
 Copy:
 	Clipboard:=Message
