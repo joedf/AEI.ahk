@@ -3,10 +3,13 @@
 ; Tested On AutoHotkey Version: 1.1.19.01
 #NoTrayIcon
 #SingleInstance, Off
+SetWinDelay, 0
+SetBatchLines, 0
 
-CHECK_FOR_UPDATES := true
+CHECK_FOR_UPDATES		:=	true
+UpdateCachedDownload	:=	true
+
 ScriptName:="AutoHotkey Environment Information"
-
 VarList=
 (
 AutoHotkey
@@ -35,7 +38,7 @@ MPRESS_IsPresent
 	WM_CTLCOLORBTNBrush	:=	DllCall("Gdi32.dll\CreateSolidBrush", "UInt", 0x202020, "UPtr")
 	BS_FLAT:="0x8000"
 
-	Gui +LastFound -Caption +Border +hwndhGUI
+	Gui +LastFound -Caption +Border +ToolWindow +OwnDialogs +hwndhGUI
 	Gui, Margin, 4, 4
 	Gui, Color, 0x202020, 0x202020
 	Gui, Font, cFFFFFF s8, Consolas
@@ -47,18 +50,19 @@ MPRESS_IsPresent
 	Gui, Add, Picture,wp hp Icon1 x+4 yp, %Ahk_WindowSpyPath%
 	Gui, Add, Button,gCopy hp x+4 yp w176 vCopyButton +%BS_FLAT% -theme hwndhCopyButton,Copy All to Clipboard
 	Gui, Add, Button,gGuiClose hp w100 x+4 yp +%BS_FLAT% -theme hwndhExitButton,Exit
-	Gui, Add, Text, +center w106 x+4 yp+0 h16 cGray +Border vUpdateInfo, Checking...
+	Gui, Add, Text, +center w106 x+4 yp+0 h16 cGray +Border vUpdateInfo gOpenUpdate, Not Checked...
 
 	LV_Add("","Loading","System & Environment information ...")
 	LV_ModifyCol(1,112)
 	LV_ModifyCol(2,330)
 	OnMessage(0x201, "WM_LBUTTONDOWN") ;Enable Draggable GUI
-	OnMessage(0x0135, "WM_CTLCOLORBTN")
+	;OnMessage(0x0135, "WM_CTLCOLORBTN")
 	GuiControl,+Disabled,CopyButton
-	
+	WinSet, Transparent, 0
 	Gui, Show,, % ScriptName
 	GroupAdd,MainGUI,ahk_id %hGUI%
 	WinSet, Redraw ; uses th last found window
+	WinFade("ahk_id " hGUI,255,20)
 	
 	gosub,GetInfo
 	
@@ -70,11 +74,15 @@ MPRESS_IsPresent
 	
 	GuiControl,-Disabled,CopyButton
 	
-	gosub,CheckUpdate
+	if (CHECK_FOR_UPDATES)
+		gosub,CheckUpdate
 	return
 
 GuiClose:
 GuiEscape:
+Winactivate, ahk_class Shell_TrayWnd
+UpdateExit:
+WinFade("ahk_id " hGUI,0,20)
 ExitApp
 
 ;///////////////////////////// the Rest ////////////////////////////////////////;{
@@ -111,33 +119,82 @@ GetInfo:
 	Win32_Processor(objWMIService,SystemCPU)
 	return
 CheckUpdate:
-	if (CHECK_FOR_UPDATES) {
-		try {
-			whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
-			whr.Open("GET", "http://ahkscript.org/download/1.1/version.txt")
-			whr.Send()
-			UpdateVersion := whr.ResponseText
-		} catch {
-			UpdateVersion := "ERROR"
-		}
-		if !RegExMatch(UpdateVersion,"\d+\.\d+\.\d+\.\d+") {
-			GuiControl,,UpdateInfo, % "Check Error !"
+	Gui, Font, cGray
+	GuiControl, Font, UpdateInfo
+	GuiControl,,UpdateInfo, Checking...
+	CheckChar:=chr(10004), CrossChar:=chr(10008)
+	if A_OSVersion in WIN_NT4,WIN_95,WIN_98,WIN_ME,WIN_2003,WIN_XP,WIN_2000
+		CheckChar:=":)", CrossChar:="X"
+	try {
+		whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+		whr.Open("GET", "http://ahkscript.org/download/1.1/version.txt")
+		whr.Send()
+		UpdateVersion := whr.ResponseText
+	} catch {
+		UpdateVersion := "ERROR"
+	}
+	if !RegExMatch(UpdateVersion,"\d+\.\d+\.\d+\.\d+") {
+		GuiControl,,UpdateInfo, Check Error !
+		Gui, Font, cRed
+		GuiControl, Font, UpdateInfo
+	} else {
+		if UpdateVersion > %A_AhkVersions%
+		{
+			GuiControl,,UpdateInfo, % "Outdated " CrossChar
 			Gui, Font, cRed
 			GuiControl, Font, UpdateInfo
 		} else {
-			if UpdateVersion > %A_AhkVersion%
-			{
-				GuiControl,,UpdateInfo, % UpdateVersion " " chr(10008)
-				Gui, Font, cRed
-				GuiControl, Font, UpdateInfo
-			} else {
-				GuiControl,,UpdateInfo, % A_AhkVersion " " chr(10004)
-				Gui, Font, cLime
-				GuiControl, Font, UpdateInfo
-			}
+			GuiControl,,UpdateInfo, % "Up to date " CheckChar
+			Gui, Font, cLime
+			GuiControl, Font, UpdateInfo
 		}
-	} else {
-		GuiControl,,UpdateInfo, % "Not Checked ..."
+	}
+	return
+OpenUpdate:
+	Gui +OwnDialogs 
+	GuiControlGet,UpdateInfoText,,UpdateInfo
+	UpdateQuestion:="Do you want to check for updates now?"
+	if UpdateInfoText contains Not,Err
+	{
+		if InStr(UpdateInfoText,"Not")
+			MsgBox, 36, [AEI] AutoHotkey Update, No check for updates has been performed.`n%UpdateQuestion%
+		if InStr(UpdateInfoText,"Error")
+			MsgBox, 36, [AEI] AutoHotkey Update, An error occurred when checking for updates.`n%UpdateQuestion%
+		IfMsgBox,Yes
+			gosub,CheckUpdate
+	}
+	if InStr(UpdateInfoText,"Out") {
+		MsgBox, 36, [AEI] AutoHotkey Update,
+		(ltrim
+		You are using an outdated version of AutoHotkey.
+		Current Version :`t%A_AhkVersion%
+		Latest Version :`t%UpdateVersion%
+		Do you want to update now?
+		)
+		IfMsgBox,Yes
+		{
+			;Run, http://ahkscript.org/download/ahk-install.exe
+			Gui +Disabled
+			if (!UpdateCachedDownload || !FileExist(UpdateFile:=(A_Temp "\AutoHotkey_Install-v" UpdateVersion ".exe")) )
+				DownloadFile("http://ahkscript.org/download/ahk-install.exe",UpdateFile)
+			Run, %UpdateFile%
+			
+			;Smooth app exit...
+			WinWaitActive,ahk_exe %UpdateFile%,,2
+			WinWaitActive,AutoHotkey Setup,,2
+			Sleep 250
+			goto UpdateExit
+		}
+	}
+	if InStr(UpdateInfoText,"Up t") {
+		MsgBox, 36, [AEI] AutoHotkey Update,
+		(ltrim
+		You are using the latest version.
+		Current Version :`t%A_AhkVersion%
+		%UpdateQuestion%
+		)
+		IfMsgBox,Yes
+			gosub,CheckUpdate
 	}
 	return
 LV_eventHandler:
@@ -200,11 +257,6 @@ getSysUptime() {
 	SystemUptime := % t_UpTime // 86400 " days " mod(t_UpTime // 3600, 24) " hours " mod(t_UpTime // 60, 60) " mins " mod(t_UpTime, 60) " seconds"
 	return SystemUptime
 }
-If ( OSVersion := GetOSVersionInfo() )
-  MsgBox % "OS Version`t:`t" OSVersion.EasyVersion
-       . "`nOS Service pack`t:`t" . OSVersion.ServicePackString
-       . "`nIs Workstation`t:`t" (OSVersion.ProductType = 1 ? "Yes" : "No")
-       
 GetOSVersionInfo() { ; from Shajul  //  http://www.autohotkey.com/board/topic/54639-getosversion/#entry414249
 	static Ver
 	If !Ver
@@ -252,6 +304,98 @@ Win32_Processor(o,ByRef SystemCPU) {
 	SystemCPU:=RegExReplace(objItem.Name,"(\s{2,}|\t)"," ")
 	break
 	}
+}
+winfade(w:="",t:=128,i:=1,d:=10) {
+	w:=(w="")?("ahk_id " WinActive("A")):w
+	t:=(t>255)?255:(t<0)?0:t
+	WinGet,s,Transparent,%w%
+	s:=(s="")?255:s ;prevent trans unset bug
+	WinSet,Transparent,%s%,%w% 
+	i:=(s<t)?abs(i):-1*abs(i)
+	while(k:=(i<0)?(s>t):(s<t)&&WinExist(w)) {
+		WinGet,s,Transparent,%w%
+		s+=i
+		WinSet,Transparent,%s%,%w%
+		sleep %d%
+	}
+}
+DownloadFile(UrlToFile, SaveFileAs, Overwrite := True, UseProgressBar := True, ProgressBarTitle:="Downloading...") {
+	; DownloadFile() by brutosozialprodukt
+	; http://ahkscript.org/boards/viewtopic.php?f=6&t=1674
+
+	; Revision: joedf
+	; Changes:  - Changed progress bar style & colors
+	;           - Changed Display Information
+	;           - Commented-out Size calculation
+	;           - Added ShortURL()
+	;           - Added short delay 100 ms to show the progress bar if download was too fast
+	;           - Added ProgressBarTitle
+	;           - Try-Catch "backup download code"
+	; ----------------------------------------------------------------------------------
+
+    ;Check if the file already exists and if we must not overwrite it
+      If (!Overwrite && FileExist(SaveFileAs))
+          Return
+    ;Check if the user wants a progressbar
+      If (UseProgressBar) {
+          _surl:=ShortURL(UrlToFile)
+          ;Initialize the WinHttpRequest Object
+            WebRequest := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+          ;Download the headers
+            WebRequest.Open("HEAD", UrlToFile)
+            WebRequest.Send()
+          ;Store the header which holds the file size in a variable:
+          try
+            FinalSize := WebRequest.GetResponseHeader("Content-Length")
+          catch
+          {
+            ;throw Exception("could not get Content-Length for URL: " UrlToFile)
+            Progress, CW202020 CTFFFFFF CB3399FF w330 h52 B1 FS8 WM700 WS700 FM8 ZH12 ZY3 C11, , %ProgressBarTitle%, %_surl%, Consolas
+            UrlDownloadToFile, %UrlToFile%, %SaveFileAs%
+            Sleep 100
+            Progress, Off
+            return
+          }
+          ;Create the progressbar and the timer
+            Progress, CW202020 CTFFFFFF CB3399FF w330 h52 B1 FS8 WM700 WS700 FM8 ZH12 ZY3 C11, , %ProgressBarTitle%, %_surl%, Consolas
+            SetTimer, __UpdateProgressBar, 100
+      }
+    ;Download the file
+      UrlDownloadToFile, %UrlToFile%, %SaveFileAs%
+    ;Remove the timer and the progressbar because the download has finished
+      If (UseProgressBar) {
+          Sleep 100
+          Progress, Off
+          SetTimer, __UpdateProgressBar, Off
+      }
+    Return
+    
+    ;The label that updates the progressbar
+      __UpdateProgressBar:
+         ;Get the current filesize and tick
+            CurrentSize := FileOpen(SaveFileAs, "r").Length ;FileGetSize wouldn't return reliable results
+            CurrentSizeTick := A_TickCount
+          ;Calculate the downloadspeed
+            ;Speed := Round((CurrentSize/1024-LastSize/1024)/((CurrentSizeTick-LastSizeTick)/1000)) . " Kb/s"
+          ;Save the current filesize and tick for the next time
+            ;LastSizeTick := CurrentSizeTick
+            ;LastSize := FileOpen(SaveFileAs, "r").Length
+          ;Calculate percent done
+            PercentDone := Round(CurrentSize/FinalSize*100)
+          ;Update the ProgressBar
+          _csize:=Round(CurrentSize/1024,1)
+          _fsize:=Round(FinalSize/1024)
+            Progress, %PercentDone%, Downloading:  %_csize% KB / %_fsize% KB  [ %PercentDone%`% ], %_surl%
+      Return
+}
+ShortURL(p,l=50) {
+    VarSetCapacity(_p, (A_IsUnicode?2:1)*StrLen(p) )
+    DllCall("shlwapi\PathCompactPathEx"
+        ,"str", _p
+        ,"str", p
+        ,"uint", abs(l)
+        ,"uint", 0)
+    return _p
 }
 ;}
 ;}
