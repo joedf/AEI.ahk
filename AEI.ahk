@@ -138,7 +138,7 @@ CheckUpdate:
 		Gui, Font, cRed
 		GuiControl, Font, UpdateInfo
 	} else {
-		if UpdateVersion > %A_AhkVersions%
+		if UpdateVersion > %A_AhkVersion%
 		{
 			GuiControl,,UpdateInfo, % "Outdated " CrossChar
 			Gui, Font, cRed
