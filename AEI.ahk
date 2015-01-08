@@ -37,14 +37,15 @@ MPRESS_IsPresent
 	; http://ahkscript.org/boards/viewtopic.php?f=7&t=4029
 	WM_CTLCOLORBTNBrush	:=	DllCall("Gdi32.dll\CreateSolidBrush", "UInt", 0x202020, "UPtr")
 	BS_FLAT:="0x8000"
+	
+	ListViewNRows:=StrCount(VarList,"`n")+1
 
 	Gui +LastFound -Caption +Border +ToolWindow +OwnDialogs +hwndhGUI
 	Gui, Margin, 4, 4
 	Gui, Color, 0x202020, 0x202020
 	Gui, Font, cFFFFFF s8, Consolas
-	Gui, Add, Progress, c202020 Background828790 w450 h16, 100
-	Gui, Add, Text, +center wp hp-1 xp yp+1 +c3399FF +BackgroundTrans, % " [ " ScriptName " ] "
-	Gui, Add, ListView, wp r14 -Hdr +ReadOnly +Background0A0A0A vLV +LV0x4000 gLV_eventHandler, Key|Value
+	Gui, Add, Text, +center w450 h16 +c3399FF +BackgroundTrans +Border, % " [ " ScriptName " ] "
+	Gui, Add, ListView, wp r%ListViewNRows% -Hdr +ReadOnly +Background0A0A0A vLV +LV0x4000 gLV_eventHandler, Key|Value
 	Gui, Add, Picture,w16 h16 Icon1, %A_ahkpath%
 	Gui, Add, Picture,wp hp Icon1 x+4 yp, %Ahk_CompilerPath%
 	Gui, Add, Picture,wp hp Icon1 x+4 yp, %Ahk_WindowSpyPath%
@@ -80,12 +81,11 @@ MPRESS_IsPresent
 
 GuiClose:
 GuiEscape:
-Winactivate, ahk_class Shell_TrayWnd
-UpdateExit:
 WinFade("ahk_id " hGUI,0,20)
 ExitApp
 
 ;///////////////////////////// the Rest ////////////////////////////////////////;{
+;############ LABELS ############### ;{
 WM_LBUTTONDOWN() {
 	#IfWinActive ahk_group MainGUI
 		#If Control("Static")
@@ -123,7 +123,7 @@ CheckUpdate:
 	GuiControl, Font, UpdateInfo
 	GuiControl,,UpdateInfo, Checking...
 	CheckChar:=chr(10004), CrossChar:=chr(10008)
-	if A_OSVersion in WIN_NT4,WIN_95,WIN_98,WIN_ME,WIN_2003,WIN_XP,WIN_2000
+	if isWinXPOrOlder()
 		CheckChar:=":)", CrossChar:="X"
 	try {
 		whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -183,7 +183,7 @@ OpenUpdate:
 			WinWaitActive,ahk_exe %UpdateFile%,,2
 			WinWaitActive,AutoHotkey Setup,,2
 			Sleep 250
-			goto UpdateExit
+			goto GuiClose
 		}
 	}
 	if InStr(UpdateInfoText,"Up t") {
@@ -200,9 +200,8 @@ OpenUpdate:
 LV_eventHandler:
 	; to do .....
 	return
-;#################################################
-;#################################################
-;////////////////////// functions ;{
+;}
+;############ FUNCTIONS ############### ;{
 Parse_append(ByRef out, key, val) {
 	k:=StrLen(key), out .= key " : `t"
 	Loop % (k<9)?3:((k<16)?2:((k<17)?1:0))
@@ -220,6 +219,11 @@ getSelectedLVtext() {
 		LV_GetText(Value, RowNumber, 2)
 		ret .= 
 	}
+}
+isWinXPOrOlder() {
+	if A_OSVersion in WIN_NT4,WIN_95,WIN_98,WIN_ME,WIN_2003,WIN_XP,WIN_2000	
+		return true
+	return  false
 }
 isInstalled() {
 	RegRead,InstallDir,HKLM,SOFTWARE\AutoHotkey,InstallDir
@@ -251,6 +255,10 @@ getSysLocale() { ; fork of http://stackoverflow.com/a/7759505/883015
 Control(ClassNN) {
     MouseGetPos,,,,control
     return InStr(control,ClassNN)
+}
+StrCount(Haystack,Needle) {
+	StringReplace, Haystack, Haystack, %Needle%, %Needle%, UseErrorLevel
+	return ErrorLevel
 }
 getSysUptime() {
 	t_UpTime := A_TickCount // 1000 ; Elapsed seconds since start
