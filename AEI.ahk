@@ -223,7 +223,7 @@ getSelectedLVtext() {
 isWinXPOrOlder() {
 	if A_OSVersion in WIN_NT4,WIN_95,WIN_98,WIN_ME,WIN_2003,WIN_XP,WIN_2000	
 		return true
-	return  false
+	return false
 }
 isInstalled() {
 	RegRead,InstallDir,HKLM,SOFTWARE\AutoHotkey,InstallDir
