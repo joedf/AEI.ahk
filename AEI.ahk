@@ -103,7 +103,7 @@ Copy:
 	return
 GetInfo:
 	Ahk_Flavour			:=	(A_PtrSize*8) "-bit"
-	Ahk_IsInstalled		:=	isInstalled()
+	Ahk_IsInstalled		:=	!isPortable()
 	MPRESS_IsPresent	:=	(!!FileExist(Ahk_CompilerPath "\..\MPRESS.exe"))?"1 (true)":"0 (false)"
 	SystemLocale		:=	getSysLocale() " (0x" A_Language ")"
 	SystemScreen		:=	A_ScreenWidth "x" A_ScreenHeight " (" A_ScreenDPI " DPI)"
@@ -225,9 +225,13 @@ isWinXPOrOlder() {
 		return true
 	return false
 }
-isInstalled() {
+isPortable() {
+	isInstalled(p)
+	return !(p "\AutoHotkey.exe" = A_AhkPath)
+}
+isInstalled(ByRef path="") {
 	RegRead,InstallDir,HKLM,SOFTWARE\AutoHotkey,InstallDir
-	return InStr(A_AhkPath,InstallDir)
+	return InStr(A_AhkPath,path:=InstallDir)
 }
 getCompiler() {
 	SplitPath,A_AhkPath,,Dir
