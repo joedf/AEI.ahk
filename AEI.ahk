@@ -1,5 +1,5 @@
 ; AEI.ahk - by joedf
-; Revision Date : 04:12 2015/01/09
+; Revision Date : 16:23 2015/01/09
 ; Tested On AutoHotkey Version: 1.1.19.01
 #NoTrayIcon
 #SingleInstance, Off
@@ -42,7 +42,7 @@ MPRESS_IsPresent
 	Gui, Color, 0x202020, 0x202020
 	Gui, Font, cFFFFFF s8, Consolas
 	Gui, Add, Text, +center w450 h16 +c3399FF +BackgroundTrans +Border, % " [ " ScriptName " ] "
-	Gui, Add, ListView, wp r%ListViewNRows% -Hdr +ReadOnly +Background0A0A0A vLV +LV0x4000 gLV_eventHandler, Key|Value
+	Gui, Add, ListView, wp r%ListViewNRows% -Hdr +ReadOnly +Background0A0A0A vLV +LV0x4000, Key|Value
 	Gui, Add, Picture,w16 h16 Icon1, %A_ahkpath%
 	Gui, Add, Picture,wp hp Icon1 x+4 yp, %Ahk_CompilerPath%
 	Gui, Add, Picture,wp hp Icon1 x+4 yp, %Ahk_WindowSpyPath%
