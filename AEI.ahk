@@ -1,5 +1,5 @@
 ; AEI.ahk - by joedf
-; Revision Date : 15:42 2015/01/08
+; Revision Date : 04:12 2015/01/09
 ; Tested On AutoHotkey Version: 1.1.19.01
 #NoTrayIcon
 #SingleInstance, Off
@@ -33,9 +33,6 @@ MPRESS_IsPresent
 	Ahk_CompilerPath	:=	getCompiler()
 	Ahk_WindowSpyPath	:=	getWindowSpy()
 	
-	; see "'Borderless' buttons on dark backgrounds" by just me
-	; http://ahkscript.org/boards/viewtopic.php?f=7&t=4029
-	WM_CTLCOLORBTNBrush	:=	DllCall("Gdi32.dll\CreateSolidBrush", "UInt", 0x202020, "UPtr")
 	BS_FLAT:="0x8000"
 	
 	ListViewNRows:=StrCount(VarList,"`n")+1
@@ -57,7 +54,6 @@ MPRESS_IsPresent
 	LV_ModifyCol(1,112)
 	LV_ModifyCol(2,330)
 	OnMessage(0x201, "WM_LBUTTONDOWN") ;Enable Draggable GUI
-	;OnMessage(0x0135, "WM_CTLCOLORBTN")
 	GuiControl,+Disabled,CopyButton
 	WinSet, Transparent, 0
 	Gui, Show,, % ScriptName
@@ -93,10 +89,6 @@ WM_LBUTTONDOWN() {
 		;http://www.autohotkey.com/board/topic/80594-how-to-enable-drag-for-a-gui-without-a-titlebar/#entry60075
 		#If
 	#IfWinActive
-}
-WM_CTLCOLORBTN() {
-	Global WM_CTLCOLORBTNBrush
-	Return WM_CTLCOLORBTNBrush
 }
 Copy:
 	Clipboard:=Message
@@ -197,9 +189,6 @@ OpenUpdate:
 			gosub,CheckUpdate
 	}
 	return
-LV_eventHandler:
-	; to do .....
-	return
 ;}
 ;############ FUNCTIONS ############### ;{
 Parse_append(ByRef out, key, val) {
@@ -207,18 +196,6 @@ Parse_append(ByRef out, key, val) {
 	Loop % (k<9)?3:((k<16)?2:((k<17)?1:0))
 		out .= "`t"
 	out .= val "`n"
-}
-getSelectedLVtext() {
-	ret:="", RowNumber := 0  ; This causes the first loop iteration to start the search at the top of the list.
-	Loop
-	{
-		RowNumber := LV_GetNext(RowNumber)  ; Resume the search at the row after that found by the previous iteration.
-		if not RowNumber  ; The above returned zero, so there are no more selected rows.
-			break
-		LV_GetText(Key, RowNumber, 1)
-		LV_GetText(Value, RowNumber, 2)
-		ret .= 
-	}
 }
 isWinXPOrOlder() {
 	if A_OSVersion in WIN_NT4,WIN_95,WIN_98,WIN_ME,WIN_2003,WIN_XP,WIN_2000	
@@ -304,18 +281,12 @@ Win32_ComputerSystem(o,ByRef SystemModel,ByRef SystemType,ByRef SystemRAM) {
 Win32_VideoController(o,ByRef SystemGPU) {
 	colItems := o.ExecQuery("SELECT * FROM Win32_VideoController")._NewEnum
 	while colItems[objItem]
-	{
-	SystemGPU:=objItem.Name " v" objItem.DriverVersion " @ " Round((objItem.AdapterRAM / (1024 ** 2)), 2) " MB RAM"
-	break
-	}
+		return SystemGPU:=objItem.Name " v" objItem.DriverVersion " @ " Round((objItem.AdapterRAM / (1024 ** 2)), 2) " MB RAM"
 }
 Win32_Processor(o,ByRef SystemCPU) {
 	colItems := o.ExecQuery("SELECT * FROM Win32_Processor")._NewEnum
 	while colItems[objItem]
-	{
-	SystemCPU:=RegExReplace(objItem.Name,"(\s{2,}|\t)"," ")
-	break
-	}
+		return SystemCPU:=RegExReplace(objItem.Name,"(\s{2,}|\t)"," ")
 }
 winfade(w:="",t:=128,i:=1,d:=10) {
 	w:=(w="")?("ahk_id " WinActive("A")):w
