@@ -37,7 +37,7 @@ MPRESS_IsPresent
 	
 	ListViewNRows:=StrCount(VarList,"`n")+1
 
-	Gui +LastFound -Caption +Border +ToolWindow +OwnDialogs +hwndhGUI
+	Gui +LastFound +Border +OwnDialogs +hwndhGUI -Caption +e0x80000
 	Gui, Margin, 4, 4
 	Gui, Color, 0x202020, 0x202020
 	Gui, Font, cFFFFFF s8, Consolas
