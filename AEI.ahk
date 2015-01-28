@@ -1,6 +1,6 @@
 ; AEI.ahk - by joedf
-; Revision Date : 16:23 2015/01/09
-; Tested On AutoHotkey Version: 1.1.19.01
+; Revision Date : 21:12 2015/01/27
+; Tested On AutoHotkey Version: 1.1.19.02
 #NoTrayIcon
 #SingleInstance, Off
 SetWinDelay, 0
@@ -246,7 +246,7 @@ getSysUptime() {
 	SystemUptime := % t_UpTime // 86400 " days " mod(t_UpTime // 3600, 24) " hours " mod(t_UpTime // 60, 60) " mins " mod(t_UpTime, 60) " seconds"
 	return SystemUptime
 }
-GetOSVersionInfo() { ; from Shajul  //  http://www.autohotkey.com/board/topic/54639-getosversion/#entry414249
+_GetOSVersionInfo() { ; from Shajul  //  http://www.autohotkey.com/board/topic/54639-getosversion/#entry414249
 	static Ver
 	If !Ver
 	{
@@ -255,16 +255,37 @@ GetOSVersionInfo() { ; from Shajul  //  http://www.autohotkey.com/board/topic/54
 		If !DllCall("GetVersionExW", "Ptr", &OSVer)
 		return 0 ; GetSysErrorText(A_LastError)
 		Ver := Object()
-		Ver.MajorVersion      := NumGet(OSVer, 4, "UInt")
-		Ver.MinorVersion      := NumGet(OSVer, 8, "UInt")
-		Ver.BuildNumber       := NumGet(OSVer, 12, "UInt")
-		Ver.PlatformId        := NumGet(OSVer, 16, "UInt")
-		Ver.ServicePackString := StrGet(&OSVer+20, 128, "UTF-16")
-		Ver.ServicePackMajor  := NumGet(OSVer, 276, "UShort")
-		Ver.ServicePackMinor  := NumGet(OSVer, 278, "UShort")
-		Ver.SuiteMask         := NumGet(OSVer, 280, "UShort")
-		Ver.ProductType       := NumGet(OSVer, 282, "UChar")
-		Ver.EasyVersion       := Ver.MajorVersion . "." . Ver.MinorVersion . "." . Ver.BuildNumber
+		Ver.MajorVersion		:= NumGet(OSVer, 4, "UInt")
+		Ver.MinorVersion		:= NumGet(OSVer, 8, "UInt")
+		Ver.BuildNumber			:= NumGet(OSVer, 12, "UInt")
+		Ver.PlatformId			:= NumGet(OSVer, 16, "UInt")
+		Ver.ServicePackString	:= StrGet(&OSVer+20, 128, "UTF-16")
+		Ver.ServicePackMajor	:= NumGet(OSVer, 276, "UShort")
+		Ver.ServicePackMinor	:= NumGet(OSVer, 278, "UShort")
+		Ver.SuiteMask			:= NumGet(OSVer, 280, "UShort")
+		Ver.ProductType			:= NumGet(OSVer, 282, "UChar")
+		Ver.EasyVersion			:= Ver.MajorVersion . "." . Ver.MinorVersion . "." . Ver.BuildNumber
+	}
+	return Ver
+}
+GetOSVersionInfo() { ; Thanks jNizM  //  http://ahkscript.org/boards/viewtopic.php?f=6&t=5825#p36105
+	static Ver
+	If !Ver
+	{
+		static RTL_OSVIEX, init := VarSetCapacity(RTL_OSVIEX,284,0) && NumPut(284,RTL_OSVIEX,"UInt")
+		if (DllCall("ntdll.dll\RtlGetVersion","Ptr",&RTL_OSVIEX) != 0)
+			return _GetOSVersionInfo() ; "Error in RtlGetVersion"
+		Ver := Object()
+		Ver.MajorVersion		:= NumGet(RTL_OSVIEX,4,"UInt")
+		Ver.MinorVersion		:= NumGet(RTL_OSVIEX,8,"UInt")
+		Ver.BuildNumber			:= NumGet(RTL_OSVIEX,12,"UInt")
+		Ver.PlatformId			:= NumGet(RTL_OSVIEX,16,"UInt")
+		Ver.ServicePackString	:= StrGet(&RTL_OSVIEX+20,128,"UTF-16")
+		Ver.ServicePackMajor	:= NumGet(RTL_OSVIEX,276,"UShort")
+		Ver.ServicePackMinor	:= NumGet(RTL_OSVIEX,278,"UShort")
+		Ver.SuiteMask			:= NumGet(RTL_OSVIEX,280,"UShort")
+		Ver.ProductType			:= NumGet(RTL_OSVIEX,282,"UChar")
+		Ver.EasyVersion       	:= Ver.MajorVersion . "." . Ver.MinorVersion . "." . Ver.BuildNumber
 	}
 	return Ver
 }
