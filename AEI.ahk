@@ -1,7 +1,7 @@
 ; AEI.ahk - by joedf
 ; Revision Date : 21:12 2015/01/27
 ; Tested On AutoHotkey Version: 1.1.19.02
-#NoTrayIcon
+;#NoTrayIcon
 #SingleInstance, Off
 SetWinDelay, 0
 SetBatchLines, 0
