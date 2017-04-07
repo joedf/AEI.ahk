@@ -1,10 +1,13 @@
 ; AEI.ahk - by joedf
-; Revision Date : 21:12 2015/01/27
+; Revision Date : 00:04 2017/04/07
 ; Tested On AutoHotkey Version: 1.1.19.02
 ;#NoTrayIcon
 #SingleInstance, Off
 SetWinDelay, 0
 SetBatchLines, 0
+
+AHK_UPDATE_URL		:= "https://autohotkey.com/download/1.1/version.txt"
+AHK_DOWNLOAD_EXE	:= "https://autohotkey.com/download/ahk-install.exe"
 
 CHECK_FOR_UPDATES		:=	true
 UpdateCachedDownload	:=	true
@@ -119,7 +122,7 @@ CheckUpdate:
 		CheckChar:=":)", CrossChar:="X"
 	try {
 		whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
-		whr.Open("GET", "http://ahkscript.org/download/1.1/version.txt")
+		whr.Open("GET", AHK_UPDATE_URL)
 		whr.Send()
 		UpdateVersion := whr.ResponseText
 	} catch {
@@ -168,7 +171,7 @@ OpenUpdate:
 			;Run, http://ahkscript.org/download/ahk-install.exe
 			Gui +Disabled
 			if (!UpdateCachedDownload || !FileExist(UpdateFile:=(A_Temp "\AutoHotkey_Install-v" UpdateVersion ".exe")) )
-				DownloadFile("http://ahkscript.org/download/ahk-install.exe",UpdateFile)
+				DownloadFile(AHK_DOWNLOAD_EXE,UpdateFile)
 			Run, %UpdateFile%
 			
 			;Smooth app exit...
