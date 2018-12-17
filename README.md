@@ -6,6 +6,6 @@ http://ahkscript.org/boards/viewtopic.php?f=6&t=5825
   
 By joedf, Released under the [MIT License](http://opensource.org/licenses/MIT)  
 
-###Screenshots
+### Screenshots
 ![screenshot](screenshot.png "screenshot")
 ![screenshotXP](screenshotXP.png "screenshotXP")
