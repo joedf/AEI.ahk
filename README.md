@@ -9,3 +9,4 @@ By joedf, Released under the [MIT License](http://opensource.org/licenses/MIT)
 ### Screenshots
 ![screenshot](screenshot.png "screenshot")
 ![screenshotXP](screenshotXP.png "screenshotXP")
+![screenshotWin10](screenshotWin10.png "screenshotWin10")
