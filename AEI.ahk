@@ -1,6 +1,6 @@
 ; AEI.ahk - by joedf
-; Revision Date : 00:04 2017/04/07
-; Tested On AutoHotkey Version: 1.1.19.02
+; Revision Date : 18:41 2019/10/14
+; Tested On AutoHotkey Version: 1.1.31.01
 ;#NoTrayIcon
 #SingleInstance, Off
 SetWinDelay, 0
@@ -48,7 +48,12 @@ MPRESS_IsPresent
 	Gui, Add, ListView, wp r%ListViewNRows% -Hdr +ReadOnly +Background0A0A0A vLV +LV0x4000, Key|Value
 	Gui, Add, Picture,w16 h16 Icon1, %A_ahkpath%
 	Gui, Add, Picture,wp hp Icon1 x+4 yp, %Ahk_CompilerPath%
-	Gui, Add, Picture,wp hp Icon1 x+4 yp, %Ahk_WindowSpyPath%
+	if InStr(Ahk_WindowSpyPath,".exe")
+		Gui, Add, Picture,wp hp Icon1 x+4 yp, %Ahk_WindowSpyPath%
+	else if InStr(Ahk_WindowSpyPath,".ahk")
+		Gui, Add, Picture,wp hp Icon56 x+4 yp, shell32.dll
+	else
+		Gui, Add, Picture,wp hp Icon78 x+4 yp, shell32.dll
 	Gui, Add, Button,gCopy hp x+4 yp w176 vCopyButton +%BS_FLAT% -theme hwndhCopyButton,Copy All to Clipboard
 	Gui, Add, Button,gGuiClose hp w100 x+4 yp +%BS_FLAT% -theme hwndhExitButton,Exit
 	Gui, Add, Text, +center w106 x+4 yp+0 h16 cGray +Border vUpdateInfo gOpenUpdate, Not Checked...
@@ -222,6 +227,8 @@ getCompiler() {
 getWindowSpy() {
 	SplitPath,A_AhkPath,,Dir
 	if FileExist(p:=(Dir "\AU3_Spy.exe"))
+		return p
+	if FileExist(p:=(Dir "\WindowSpy.ahk"))
 		return p
 	return "Not Found"
 }
