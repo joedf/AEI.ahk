@@ -136,9 +136,9 @@ GetInfo() {
 	SystemGPU := ""
 	SystemCPU := ""
 
-	;Win32_ComputerSystem(objWMIService,SystemModel,SystemType,SystemRAM)
-	;Win32_VideoController(objWMIService,SystemGPU)
-	;Win32_Processor(objWMIService,SystemCPU)
+	Win32_ComputerSystem(objWMIService,&SystemModel,&SystemType,&SystemRAM)
+	Win32_VideoController(objWMIService,&SystemGPU)
+	Win32_Processor(objWMIService,&SystemCPU)
 }
 CheckUpdate() {
 	global
@@ -333,27 +333,26 @@ GetOSVersionInfo() { ; Thanks jNizM  //  http://ahkscript.org/boards/viewtopic.p
 	}
 	return Ver
 }
-/* Win32_ComputerSystem(o,&SystemModel,&SystemType,&SystemRAM) {
-	sys_l := o.ExecQuery("Select * from Win32_ComputerSystem")._NewEnum
-	while sys_l[sys]
+Win32_ComputerSystem(o,&SystemModel,&SystemType,&SystemRAM) {
+	sysQuery := o.ExecQuery("Select * from Win32_ComputerSystem")._NewEnum()
+	For prop in sysQuery
 	{
-	SystemModel:=sys.Model
-	SystemType:=sys.SystemType
-	SystemRAM:=Round(sys.TotalPhysicalMemory/(1024*1024),0) . " MB"
+	SystemModel:=prop.Model
+	SystemType:=prop.SystemType
+	SystemRAM:=Round(prop.TotalPhysicalMemory/(1024*1024),0) . " MB"
 	break
 	}
 }
 Win32_VideoController(o,&SystemGPU) {
-	colItems := o.ExecQuery("SELECT * FROM Win32_VideoController")._NewEnum
-	while colItems[objItem]
+	colItems := o.ExecQuery("SELECT * FROM Win32_VideoController")._NewEnum()
+	For objItem in colItems
 		return SystemGPU:=objItem.Name " v" objItem.DriverVersion " @ " Round((objItem.AdapterRAM / (1024 ** 2)), 2) " MB RAM"
 }
 Win32_Processor(o,&SystemCPU) {
-	colItems := o.ExecQuery("SELECT * FROM Win32_Processor")._NewEnum
-	while colItems[objItem]
+	colItems := o.ExecQuery("SELECT * FROM Win32_Processor")._NewEnum()
+	For objItem in colItems
 		return SystemCPU:=RegExReplace(objItem.Name,"(\s{2,}|\t)"," ")
 }
-*/
 winfade(w:="",t:=128,i:=1,d:=10) {
 	w:=(w="")?("ahk_id " WinActive("A")):w
 	t:=(t>255)?255:(t<0)?0:t
