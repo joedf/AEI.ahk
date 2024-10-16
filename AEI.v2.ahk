@@ -391,7 +391,9 @@ DownloadFile(UrlToFile, SaveFileAs, Overwrite := True, UseProgressBar := True, P
 	progUI.SetFont("cFFFFFF w700 s8")
 	;static progOpts := "CW202020 CTFFFFFF CB3399FF w330 h52 B1 FS8 WM700 WS700 FM8 ZH12 ZY3 C11"
 	progUI.BackColor := 0x202020
-	static progOpts := "c0x3399FF w330 h52"
+	static progOpts := "c3399FF Background000000 w400 h12"
+	static guiShowOpts := "h52"
+	static subtextOpts := "Center w400 h24"
 
 	; DownloadFile() by brutosozialprodukt
 	; http://ahkscript.org/boards/viewtopic.php?f=6&t=1674
@@ -427,7 +429,8 @@ DownloadFile(UrlToFile, SaveFileAs, Overwrite := True, UseProgressBar := True, P
 		 _csize:=Round(CurrentSize/1024,1)
 		 _fsize:=Round(FinalSize/1024)
 		   ;Progress, %PercentDone%, Downloading:  %_csize% KB / %_fsize% KB  [ %PercentDone%`% ], %_surl%
-		   progUI["MyText"].Text := "Downloading:  " . _csize . " KB / " . _fsize . " KB  [ " . "PercentDone" . "% ]`n " . _surl
+		   progUI["MyText"].Text := "Downloading:  " . _csize . " KB / " . _fsize . " KB  [ " . PercentDone . "% ]`n " . _surl
+		   progUI["MyProgress"].Value := PercentDone
 	}
 
     ;Check if the file already exists and if we must not overwrite it
@@ -458,10 +461,10 @@ DownloadFile(UrlToFile, SaveFileAs, Overwrite := True, UseProgressBar := True, P
 			if hasTextCtrl
 				progUI["MyText"].Text := _surl
 			else
-				progUI.AddText("vMyText", _surl)
+				progUI.AddText(subtextOpts . " vMyText", _surl)
 				progUI["MyText"].SetFont("s8 w700")
 				hasTextCtrl := true
-			progUI.Show()
+			progUI.Show(guiShowOpts)
             Download UrlToFile, SaveFileAs
             Sleep 100
             progUI.Hide()
@@ -479,10 +482,10 @@ DownloadFile(UrlToFile, SaveFileAs, Overwrite := True, UseProgressBar := True, P
 			if hasTextCtrl
 				progUI["MyText"].Text := _surl
 			else
-				progUI.AddText("vMyText", _surl)
+				progUI.AddText(subtextOpts . " vMyText", _surl)
 				progUI["MyText"].SetFont("s8 w700")
 				hasTextCtrl := true
-			progUI.Show()
+			progUI.Show(guiShowOpts)
             SetTimer __UpdateProgressBar, 100
       }
     ;Download the file
