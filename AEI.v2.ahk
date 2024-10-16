@@ -178,9 +178,9 @@ OpenUpdate(*) {
 	{
 		msgboxResult := ""
 		if InStr(UpdateInfoText,"Not")
-			msgboxResult := MsgBox("No check for updates has been performed.`n" . UpdateQuestion, "[AEI] AutoHotkey Update", 36)
+			msgboxResult := MsgBox("No check for updates has been performed.`n" . UpdateQuestion, "[AEI] AutoHotkey Update", 0x24)
 		if InStr(UpdateInfoText,"Error")
-			MsgBox("[AEI] AutoHotkey Update, An error occurred when checking for updates.`n" . UpdateQuestion, "[AEI] AutoHotkey Update", 36)
+			MsgBox("[AEI] AutoHotkey Update, An error occurred when checking for updates.`n" . UpdateQuestion, "[AEI] AutoHotkey Update", 0x24)
 		if InStr(msgboxResult,"Yes")
 			CheckUpdate()
 	}
@@ -192,7 +192,7 @@ OpenUpdate(*) {
 		Latest Version :`t " (UpdateVersion) "
 		Do you want to update now?"
 		)
-		msgbox2Result := MsgBox(msgText, "[AEI] AutoHotkey Update")
+		msgbox2Result := MsgBox(msgText, "[AEI] AutoHotkey Update", 0x24)
 		if InStr(msgbox2Result,"Yes")
 		{
 			;Run, http://ahkscript.org/download/ahk-install.exe
