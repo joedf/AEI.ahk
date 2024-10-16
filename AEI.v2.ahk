@@ -253,12 +253,23 @@ getCompiler() {
 		return p
 	return "Not Found"
 }
+NormalizePath(path) {
+	; from v2 docs "Long Paths"
+    cc := DllCall("GetFullPathName", "str", path, "uint", 0, "ptr", 0, "ptr", 0, "uint")
+    buf := Buffer(cc*2)
+    DllCall("GetFullPathName", "str", path, "uint", cc, "ptr", buf, "ptr", 0)
+    return StrGet(buf)
+}
 getWindowSpy() {
 	SplitPath A_AhkPath,,&Dir
 	if FileExist(p:=(Dir "\AU3_Spy.exe"))
 		return p
 	if FileExist(p:=(Dir "\WindowSpy.ahk"))
 		return p
+	if FileExist(p:=(Dir "\..\UX\WindowSpy.ahk"))
+		return NormalizePath(p)
+	if FileExist(p:=(Dir "\..\WindowSpy.ahk"))
+		return NormalizePath(p)
 	return "Not Found"
 }
 getSysLocale() { ; fork of http://stackoverflow.com/a/7759505/883015
