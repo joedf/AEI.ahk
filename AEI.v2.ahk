@@ -6,7 +6,7 @@
 #SingleInstance Force
 SetWinDelay 0
 
-AHK_UPDATE_URL		:= "https://www.autohotkey.com/download/1.1/version.txt"
+AHK_UPDATE_URL		:= "https://www.autohotkey.com/download/2.0/version.txt"
 AHK_DOWNLOAD_EXE	:= "https://autohotkey.com/download/ahk-install.exe"
 
 CHECK_FOR_UPDATES		:=	true
@@ -77,6 +77,7 @@ MPRESS_IsPresent
 	WinRedraw ; uses the last found window
 	WinFade("ahk_id " . UI.Hwnd,255,20)
 
+	Message := ""
 	GetInfo()
 
 	LV.Delete()
@@ -84,7 +85,7 @@ MPRESS_IsPresent
 	{
 		if (i:=A_LoopField) {
 			d := %i%
-			Parse_append(Message,i,d)
+			Message := Parse_append(Message,i,d)
 			LV.Add("",i,d)
 		}
 	}
@@ -96,14 +97,14 @@ MPRESS_IsPresent
 		CheckUpdate()
 	return
 
-GuiClose() {
+GuiClose(thisGui, *) {
 	WinFade("ahk_id " UI.Hwnd,0,20)
 	ExitApp
 }
 
 ;///////////////////////////// the Rest ////////////////////////////////////////;{
 ;############ LABELS ############### ;{
-WM_LBUTTONDOWN() {
+WM_LBUTTONDOWN(*) {
 	;#HotIf WinActive("ahk_group MainGUI")
 		;#HotIf Control("Static")
 		PostMessage 0xA1,2  ;-- Goyyah/SKAN trick
@@ -111,7 +112,7 @@ WM_LBUTTONDOWN() {
 		;#HotIf
 	;#HotIf
 }
-CopyInfo() {
+CopyInfo(*) {
 	global
 	Clipboard:=Message
 }
@@ -135,9 +136,9 @@ GetInfo() {
 	SystemGPU := ""
 	SystemCPU := ""
 
-	Win32_ComputerSystem(objWMIService,SystemModel,SystemType,SystemRAM)
-	Win32_VideoController(objWMIService,SystemGPU)
-	Win32_Processor(objWMIService,SystemCPU)
+	;Win32_ComputerSystem(objWMIService,SystemModel,SystemType,SystemRAM)
+	;Win32_VideoController(objWMIService,SystemGPU)
+	;Win32_Processor(objWMIService,SystemCPU)
 }
 CheckUpdate() {
 	global
@@ -154,11 +155,11 @@ CheckUpdate() {
 	} catch {
 		UpdateVersion := "ERROR"
 	}
-	if !RegExMatch(UpdateVersion,"\d+\.\d+\.\d+\.\d+") {
+	if !RegExMatch(UpdateVersion,"(\d+\.){2,3}\d+") {
 		txtUpdateInfo.Text := "Check Error !"
 		txtUpdateInfo.SetFont("cRed")
 	} else {
-		if UpdateVersion > A_AhkVersion
+		if VerCompare(UpdateVersion, A_AhkVersion) > 0
 		{
 			txtUpdateInfo.Text :=  "Outdated " CrossChar
 			txtUpdateInfo.SetFont("cRed")
@@ -168,7 +169,7 @@ CheckUpdate() {
 		}
 	}
 }
-OpenUpdate() {
+OpenUpdate(*) {
 	global
 	UI.Opt("+OwnDialogs")
 	UpdateInfoText := txtUpdateInfo.Text
@@ -184,13 +185,13 @@ OpenUpdate() {
 			CheckUpdate()
 	}
 	if InStr(UpdateInfoText,"Out") {
-		msgText := "
+		msgText :=
 		(ltrim
-		You are using an outdated version of AutoHotkey.
-		Current Version :`t" . A_AhkVersion . "
-		Latest Version :`t" . UpdateVersion . "
-		Do you want to update now?
-		)"
+		"You are using an outdated version of AutoHotkey.
+		Current Version :`t " (A_AhkVersion) "
+		Latest Version :`t " (UpdateVersion) "
+		Do you want to update now?"
+		)
 		msgbox2Result := MsgBox(msgText, "[AEI] AutoHotkey Update")
 		if InStr(msgbox2Result,"Yes")
 		{
@@ -204,16 +205,17 @@ OpenUpdate() {
 			WinWaitActive("ahk_exe " . UpdateFile,,2)
 			WinWaitActive("AutoHotkey Setup",,2)
 			Sleep 250
-			GuiClose()
+			GuiClose(UI)
 		}
 	}
 	if InStr(UpdateInfoText,"Up t") {
-		msgText := "
+		msgText :=
 		(ltrim
-		You are using the latest version.
-		Current Version :`t" . A_AhkVersion . "
-		" . UpdateQuestion . "
-		)"
+		"You are using the latest version.
+		Current Version : " A_AhkVersion
+		"`n" UpdateQuestion
+		)
+
 		rMsg := MsgBox(msgText, "[AEI] AutoHotkey Update", 36)
 
 		if InStr(rMsg,"Yes")
@@ -222,15 +224,16 @@ OpenUpdate() {
 }
 ;}
 ;############ FUNCTIONS ############### ;{
-Parse_append(&out, key, val) {
-	k:=StrLen(key), out .= key " : `t"
+Parse_append(raw, key, val) {
+	k:=StrLen(key), raw .= key " : `t"
 	Loop (k<9)?3:((k<16)?2:((k<17)?1:0))
-		out .= "`t"
-	out .= val "`n"
+		raw .= "`t"
+	raw .= val "`n"
+	return raw
 }
 isWinXPOrOlder() {
 	;if A_OSVersion in WIN_NT4,WIN_95,WIN_98,WIN_ME,WIN_2003,WIN_XP,WIN_2000
-	if A_OSVersion > 6
+	if VerCompare(A_OSVersion, "6.0.0") <= 0
 		return true
 	return false
 }
@@ -239,12 +242,13 @@ isPortable() {
 	isInstalled(p)
 	return !(p "\AutoHotkey.exe" = A_AhkPath)
 }
-isInstalled(&path:="") {
+isInstalled(path:="") {
 	InstallDir := RegRead("HKLM\SOFTWARE\AutoHotkey","InstallDir")
 	return InStr(A_AhkPath,path:=InstallDir)
 }
 getCompiler() {
-	SplitPath A_AhkPath,,&Dir
+	; SplitPath A_AhkPath,,&Dir
+	Dir := RegRead("HKLM\SOFTWARE\AutoHotkey","InstallDir")
 	if FileExist(p:=(Dir "\Compiler\Ahk2Exe.exe"))
 		return p
 	return "Not Found"
@@ -286,7 +290,8 @@ _GetOSVersionInfo() { ; from Shajul  //  http://www.autohotkey.com/board/topic/5
 	static Ver
 	If !Ver
 	{
-		VarSetCapacity(OSVer, 284, 0)
+		; VarSetCapacity(OSVer, 284, 0)
+		VarSetStrCapacity(&OSVer, 284)
 		NumPut(284, OSVer, 0, "UInt")
 		If !DllCall("GetVersionExW", "Ptr", &OSVer)
 		return 0 ; GetSysErrorText(A_LastError)
@@ -305,18 +310,21 @@ _GetOSVersionInfo() { ; from Shajul  //  http://www.autohotkey.com/board/topic/5
 	return Ver
 }
 GetOSVersionInfo() { ; Thanks jNizM  //  http://ahkscript.org/boards/viewtopic.php?f=6&t=5825#p36105
-	static Ver
+	static Ver := ""
 	If !Ver
 	{
-		static RTL_OSVIEX, init := VarSetCapacity(RTL_OSVIEX,284,0) && NumPut(284,RTL_OSVIEX,"UInt")
-		if (DllCall("ntdll.dll\RtlGetVersion","Ptr",&RTL_OSVIEX) != 0)
+		; static RTL_OSVIEX, init := VarSetCapacity(RTL_OSVIEX,284,0) && NumPut(284,RTL_OSVIEX,"UInt")
+		; static RTL_OSVIEX, init := VarSetStrCapacity(&RTL_OSVIEX,284) && NumPut("UInt",284,RTL_OSVIEX)
+		static RTL_OSVIEX := Buffer(284)
+		NumPut("UInt",284,RTL_OSVIEX)
+		if (DllCall("ntdll.dll\RtlGetVersion","Ptr", RTL_OSVIEX) != 0)
 			return _GetOSVersionInfo() ; "Error in RtlGetVersion"
 		Ver := Object()
 		Ver.MajorVersion		:= NumGet(RTL_OSVIEX,4,"UInt")
 		Ver.MinorVersion		:= NumGet(RTL_OSVIEX,8,"UInt")
 		Ver.BuildNumber			:= NumGet(RTL_OSVIEX,12,"UInt")
 		Ver.PlatformId			:= NumGet(RTL_OSVIEX,16,"UInt")
-		Ver.ServicePackString	:= StrGet(&RTL_OSVIEX+20,128,"UTF-16")
+		Ver.ServicePackString	:= StrGet(RTL_OSVIEX.Ptr+20,128,"UTF-16")
 		Ver.ServicePackMajor	:= NumGet(RTL_OSVIEX,276,"UShort")
 		Ver.ServicePackMinor	:= NumGet(RTL_OSVIEX,278,"UShort")
 		Ver.SuiteMask			:= NumGet(RTL_OSVIEX,280,"UShort")
@@ -325,7 +333,7 @@ GetOSVersionInfo() { ; Thanks jNizM  //  http://ahkscript.org/boards/viewtopic.p
 	}
 	return Ver
 }
-Win32_ComputerSystem(o,&SystemModel,&SystemType,&SystemRAM) {
+/* Win32_ComputerSystem(o,&SystemModel,&SystemType,&SystemRAM) {
 	sys_l := o.ExecQuery("Select * from Win32_ComputerSystem")._NewEnum
 	while sys_l[sys]
 	{
@@ -345,6 +353,7 @@ Win32_Processor(o,&SystemCPU) {
 	while colItems[objItem]
 		return SystemCPU:=RegExReplace(objItem.Name,"(\s{2,}|\t)"," ")
 }
+*/
 winfade(w:="",t:=128,i:=1,d:=10) {
 	w:=(w="")?("ahk_id " WinActive("A")):w
 	t:=(t>255)?255:(t<0)?0:t
@@ -355,7 +364,8 @@ winfade(w:="",t:=128,i:=1,d:=10) {
 	while(k:=(i<0)?(s>t):(s<t)&&WinExist(w)) {
 		s:=WinGetTransparent(w)
 		s+=i
-		WinSetTransparent s, w
+		s_bounded := Max(Min(s, 255), 0)
+		WinSetTransparent s_bounded, w
 		sleep d
 	}
 }
@@ -377,6 +387,27 @@ DownloadFile(UrlToFile, SaveFileAs, Overwrite := True, UseProgressBar := True, P
 	;           - Try-Catch "backup download code"
 	; ----------------------------------------------------------------------------------
 
+	static _surl:=""
+
+    ;The label that updates the progressbar
+	__UpdateProgressBar() {
+		;Get the current filesize and tick
+		   CurrentSize := FileOpen(SaveFileAs, "r").Length ;FileGetSize wouldn't return reliable results
+		   CurrentSizeTick := A_TickCount
+		 ;Calculate the downloadspeed
+		   ;Speed := Round((CurrentSize/1024-LastSize/1024)/((CurrentSizeTick-LastSizeTick)/1000)) . " Kb/s"
+		 ;Save the current filesize and tick for the next time
+		   ;LastSizeTick := CurrentSizeTick
+		   ;LastSize := FileOpen(SaveFileAs, "r").Length
+		 ;Calculate percent done
+		   PercentDone := Round(CurrentSize/FinalSize*100)
+		 ;Update the ProgressBar
+		 _csize:=Round(CurrentSize/1024,1)
+		 _fsize:=Round(FinalSize/1024)
+		   ;Progress, %PercentDone%, Downloading:  %_csize% KB / %_fsize% KB  [ %PercentDone%`% ], %_surl%
+		   progUI["MyText"].Text := "Downloading:  " . _csize . " KB / " . _fsize . " KB  [ " . "PercentDone" . "% ]`n " . _surl
+	}
+
     ;Check if the file already exists and if we must not overwrite it
       If (!Overwrite && FileExist(SaveFileAs))
           Return
@@ -384,7 +415,7 @@ DownloadFile(UrlToFile, SaveFileAs, Overwrite := True, UseProgressBar := True, P
       If (UseProgressBar) {
           _surl:=ShortURL(UrlToFile)
           ;Initialize the WinHttpRequest Object
-            WebRequest := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+            WebRequest := ComObject("WinHttp.WinHttpRequest.5.1")
           ;Download the headers
             WebRequest.Open("HEAD", UrlToFile)
             WebRequest.Send()
@@ -432,31 +463,13 @@ DownloadFile(UrlToFile, SaveFileAs, Overwrite := True, UseProgressBar := True, P
       If (UseProgressBar) {
           Sleep 100
           progUI.Hide()
-          SetTimer __UpdateProgressBar, Off
+          SetTimer __UpdateProgressBar, 0
       }
     Return
-
-    ;The label that updates the progressbar
-      __UpdateProgressBar() {
-         ;Get the current filesize and tick
-            CurrentSize := FileOpen(SaveFileAs, "r").Length ;FileGetSize wouldn't return reliable results
-            CurrentSizeTick := A_TickCount
-          ;Calculate the downloadspeed
-            ;Speed := Round((CurrentSize/1024-LastSize/1024)/((CurrentSizeTick-LastSizeTick)/1000)) . " Kb/s"
-          ;Save the current filesize and tick for the next time
-            ;LastSizeTick := CurrentSizeTick
-            ;LastSize := FileOpen(SaveFileAs, "r").Length
-          ;Calculate percent done
-            PercentDone := Round(CurrentSize/FinalSize*100)
-          ;Update the ProgressBar
-          _csize:=Round(CurrentSize/1024,1)
-          _fsize:=Round(FinalSize/1024)
-            ;Progress, %PercentDone%, Downloading:  %_csize% KB / %_fsize% KB  [ %PercentDone%`% ], %_surl%
-            progUI["MyText"].Text := "Downloading:  " . _csize . " KB / " . _fsize . " KB  [ " . "PercentDone" . "% ]`n " . surl
-	 }
 }
 ShortURL(p,l:=50) {
-    VarSetCapacity(_p, (A_IsUnicode?2:1)*StrLen(p) )
+    ; VarSetCapacity(_p, (A_IsUnicode?2:1)*StrLen(p) )
+    VarSetStrCapacity(&_p, 2*StrLen(p) )
     DllCall("shlwapi\PathCompactPathEx"
         ,"str", _p
         ,"str", p
