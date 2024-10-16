@@ -8,9 +8,11 @@ SetWinDelay 0
 
 AHK_UPDATE_URL		:= "https://www.autohotkey.com/download/2.0/version.txt"
 AHK_DOWNLOAD_EXE	:= "https://autohotkey.com/download/ahk-install.exe"
+AHK_DOWNLOAD_EXE_ALT := "https://github.com/AutoHotkey/AutoHotkey/releases/download/v$VERSION$/AutoHotkey_$VERSION$_setup.exe"
 
 CHECK_FOR_UPDATES		:=	true
 UpdateCachedDownload	:=	true
+MinUpdateFileSize       :=  1038336 ;Bytes
 
 ScriptName:="AutoHotkey Environment Information"
 VarList:="
@@ -197,8 +199,12 @@ OpenUpdate(*) {
 		{
 			;Run, http://ahkscript.org/download/ahk-install.exe
 			UI.opt("+Disabled")
-			if (!UpdateCachedDownload || !FileExist(UpdateFile:=(A_Temp "\AutoHotkey_Install-v" UpdateVersion ".exe")) )
-				DownloadFile(AHK_DOWNLOAD_EXE,UpdateFile)
+			UpdateFile:=(A_Temp "\AutoHotkey_Install-v" UpdateVersion ".exe")
+			if (!UpdateCachedDownload || !FileExist(UpdateFile) || (FileGetSize(UpdateFile) <= MinUpdateFileSize) ) {
+				;DownloadFile(AHK_DOWNLOAD_EXE,UpdateFile)
+				dnlFile := StrReplace(AHK_DOWNLOAD_EXE_ALT, "$VERSION$", UpdateVersion)
+				DownloadFile(dnlFile,UpdateFile)
+			}
 			Run UpdateFile
 
 			;Smooth app exit...
@@ -381,8 +387,11 @@ winfade(w:="",t:=128,i:=1,d:=10) {
 }
 DownloadFile(UrlToFile, SaveFileAs, Overwrite := True, UseProgressBar := True, ProgressBarTitle:="Downloading...") {
 	; Attempting to make it work on v2
-	static progUI := Gui()
-	static progOpts := "CW202020 CTFFFFFF CB3399FF w330 h52 B1 FS8 WM700 WS700 FM8 ZH12 ZY3 C11"
+	static progUI := Gui("Border")
+	progUI.SetFont("cFFFFFF w700 s8")
+	;static progOpts := "CW202020 CTFFFFFF CB3399FF w330 h52 B1 FS8 WM700 WS700 FM8 ZH12 ZY3 C11"
+	progUI.BackColor := 0x202020
+	static progOpts := "c0x3399FF w330 h52"
 
 	; DownloadFile() by brutosozialprodukt
 	; http://ahkscript.org/boards/viewtopic.php?f=6&t=1674
@@ -398,11 +407,14 @@ DownloadFile(UrlToFile, SaveFileAs, Overwrite := True, UseProgressBar := True, P
 	; ----------------------------------------------------------------------------------
 
 	static _surl:=""
+	static hasProgCtrl := false
+	static hasTextCtrl := false
 
     ;The label that updates the progressbar
 	__UpdateProgressBar() {
 		;Get the current filesize and tick
-		   CurrentSize := FileOpen(SaveFileAs, "r").Length ;FileGetSize wouldn't return reliable results
+		   ;CurrentSize := FileOpen(SaveFileAs, "r").Length ;FileGetSize wouldn't return reliable results
+		   CurrentSize := FileGetSize(SaveFileAs)
 		   CurrentSizeTick := A_TickCount
 		 ;Calculate the downloadspeed
 		   ;Speed := Round((CurrentSize/1024-LastSize/1024)/((CurrentSizeTick-LastSizeTick)/1000)) . " Kb/s"
@@ -435,17 +447,20 @@ DownloadFile(UrlToFile, SaveFileAs, Overwrite := True, UseProgressBar := True, P
           catch
           {
             ;throw Exception("could not get Content-Length for URL: " UrlToFile)
-			if progUI["MyProgress"]
+			if hasProgCtrl
 				progUI["MyProgress"].Opt(progOpts)
 			else
 				progUI.AddProgress(progOpts . " vMyProgress")
+				hasProgCtrl := true
 			progUI.Title := ProgressBarTitle
 			progUI.SetFont(,"Consolas")
 
-			if progUI["MyText"]
+			if hasTextCtrl
 				progUI["MyText"].Text := _surl
 			else
 				progUI.AddText("vMyText", _surl)
+				progUI["MyText"].SetFont("s8 w700")
+				hasTextCtrl := true
 			progUI.Show()
             Download UrlToFile, SaveFileAs
             Sleep 100
@@ -454,16 +469,19 @@ DownloadFile(UrlToFile, SaveFileAs, Overwrite := True, UseProgressBar := True, P
           }
           ;Create the progressbar and the timer
             ;Progress, CW202020 CTFFFFFF CB3399FF w330 h52 B1 FS8 WM700 WS700 FM8 ZH12 ZY3 C11, , %ProgressBarTitle%, %_surl%, Consolas
-			if progUI["MyProgress"]
+			if hasProgCtrl
 				progUI["MyProgress"].Opt(progOpts)
 			else
 				progUI.AddProgress(progOpts . " vMyProgress")
+				hasProgCtrl := true
 			progUI.Title := ProgressBarTitle
 			progUI.SetFont(,"Consolas")
-			if progUI["MyText"]
+			if hasTextCtrl
 				progUI["MyText"].Text := _surl
 			else
 				progUI.AddText("vMyText", _surl)
+				progUI["MyText"].SetFont("s8 w700")
+				hasTextCtrl := true
 			progUI.Show()
             SetTimer __UpdateProgressBar, 100
       }
