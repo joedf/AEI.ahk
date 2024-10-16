@@ -12,6 +12,7 @@ AHK_DOWNLOAD_EXE_ALT := "https://github.com/AutoHotkey/AutoHotkey/releases/downl
 
 CHECK_FOR_UPDATES		:=	true
 UpdateCachedDownload	:=	true
+SKIP_DOWNLOAD_ASK       :=  false
 MinUpdateFileSize       :=  1038336 ;Bytes
 
 ScriptName:="AutoHotkey Environment Information"
@@ -175,14 +176,15 @@ OpenUpdate(*) {
 	global
 	UI.Opt("+OwnDialogs")
 	UpdateInfoText := txtUpdateInfo.Text
+	UpdateTitle := "[AEI] AutoHotkey Update"
 	UpdateQuestion := "Do you want to check for updates now?"
 	if InStr(UpdateInfoText,"Not") || InStr(UpdateInfoText,"Err")
 	{
 		msgboxResult := ""
 		if InStr(UpdateInfoText,"Not")
-			msgboxResult := MsgBox("No check for updates has been performed.`n" . UpdateQuestion, "[AEI] AutoHotkey Update", 0x24)
+			msgboxResult := MsgBox("No check for updates has been performed.`n" . UpdateQuestion, UpdateTitle, 0x24)
 		if InStr(UpdateInfoText,"Error")
-			MsgBox("[AEI] AutoHotkey Update, An error occurred when checking for updates.`n" . UpdateQuestion, "[AEI] AutoHotkey Update", 0x24)
+			MsgBox("[AEI] AutoHotkey Update, An error occurred when checking for updates.`n" . UpdateQuestion, UpdateTitle, 0x24)
 		if InStr(msgboxResult,"Yes")
 			CheckUpdate()
 	}
@@ -194,7 +196,10 @@ OpenUpdate(*) {
 		Latest Version :`t " (UpdateVersion) "
 		Do you want to update now?"
 		)
-		msgbox2Result := MsgBox(msgText, "[AEI] AutoHotkey Update", 0x24)
+		if SKIP_DOWNLOAD_ASK
+			msgbox2Result := "Yes"
+		else
+			msgbox2Result := MsgBox(msgText, UpdateTitle, 0x24)
 		if InStr(msgbox2Result,"Yes")
 		{
 			;Run, http://ahkscript.org/download/ahk-install.exe
@@ -205,13 +210,47 @@ OpenUpdate(*) {
 				dnlFile := StrReplace(AHK_DOWNLOAD_EXE_ALT, "$VERSION$", UpdateVersion)
 				DownloadFile(dnlFile,UpdateFile)
 			}
-			Run UpdateFile
 
-			;Smooth app exit...
-			WinWaitActive("ahk_exe " . UpdateFile,,2)
-			WinWaitActive("AutoHotkey Setup",,2)
-			Sleep 250
-			GuiClose(UI)
+			success := false
+			try
+			{
+				; This could fail if invalid exe
+				Run UpdateFile
+
+				success := true
+
+				;Smooth app exit...
+				WinWaitActive("ahk_exe " . UpdateFile,,2)
+				WinWaitActive("AutoHotkey Setup",,2)
+				Sleep 250
+				GuiClose(UI)
+			}
+			catch
+			{
+				success := false
+			}
+
+			if (!success)
+			{
+				FileDelete UpdateFile
+				msgText :=
+				(ltrim
+				"Looks like the downloaded file was invalid and could not be launched. "
+				"The invalid file has been deleted and should be re-downloaded.
+
+				Please try again."
+				)
+				mbResult := MsgBox(msgText, UpdateTitle, 0x35)
+				if InStr(mbResult, "Retry")
+				{
+					SKIP_DOWNLOAD_ASK := true
+					OpenUpdate()
+					SKIP_DOWNLOAD_ASK := false
+				}
+			}
+
+			UI.Opt("-OwnDialogs -Disabled")
+			return
 		}
 	}
 	if InStr(UpdateInfoText,"Up t") {
@@ -222,7 +261,7 @@ OpenUpdate(*) {
 		"`n" UpdateQuestion
 		)
 
-		rMsg := MsgBox(msgText, "[AEI] AutoHotkey Update", 36)
+		rMsg := MsgBox(msgText, UpdateTitle, 36)
 
 		if InStr(rMsg,"Yes")
 			CheckUpdate()
