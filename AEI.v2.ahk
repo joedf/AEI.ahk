@@ -426,13 +426,15 @@ winfade(w:="",t:=128,i:=1,d:=10) {
 }
 DownloadFile(UrlToFile, SaveFileAs, Overwrite := True, UseProgressBar := True, ProgressBarTitle:="Downloading...") {
 	; Attempting to make it work on v2
-	static progUI := Gui("Border")
+	static progUI := Gui("Border -Caption -SysMenu")
 	progUI.SetFont("cFFFFFF w700 s8")
 	;static progOpts := "CW202020 CTFFFFFF CB3399FF w330 h52 B1 FS8 WM700 WS700 FM8 ZH12 ZY3 C11"
 	progUI.BackColor := 0x202020
 	static progOpts := "c3399FF Background000000 w400 h12"
 	static guiShowOpts := "h52"
 	static subtextOpts := "Center w400 h24"
+
+	progUI.OnEvent("Close", progUI_Close)
 
 	; DownloadFile() by brutosozialprodukt
 	; http://ahkscript.org/boards/viewtopic.php?f=6&t=1674
@@ -470,6 +472,11 @@ DownloadFile(UrlToFile, SaveFileAs, Overwrite := True, UseProgressBar := True, P
 		   ;Progress, %PercentDone%, Downloading:  %_csize% KB / %_fsize% KB  [ %PercentDone%`% ], %_surl%
 		   progUI["MyText"].Text := "Downloading:  " . _csize . " KB / " . _fsize . " KB  [ " . PercentDone . "% ]`n " . _surl
 		   progUI["MyProgress"].Value := PercentDone
+	}
+
+	progUI_Close(*) {
+		; TODO: Prevent closing for now, since download cancel has not been implemented
+		return 1
 	}
 
     ;Check if the file already exists and if we must not overwrite it
