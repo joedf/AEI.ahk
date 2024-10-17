@@ -117,7 +117,7 @@ WM_LBUTTONDOWN(*) {
 }
 CopyInfo(*) {
 	global
-	Clipboard:=Message
+	A_Clipboard:=Message
 }
 GetInfo() {
 	global
@@ -393,10 +393,10 @@ Win32_ComputerSystem(o,&SystemModel,&SystemType,&SystemRAM) {
 	sysQuery := o.ExecQuery("Select * from Win32_ComputerSystem")._NewEnum()
 	For prop in sysQuery
 	{
-	SystemModel:=prop.Model
-	SystemType:=prop.SystemType
-	SystemRAM:=Round(prop.TotalPhysicalMemory/(1024*1024),0) . " MB"
-	break
+		SystemModel:=prop.Model
+		SystemType:=prop.SystemType
+		SystemRAM:=Round(prop.TotalPhysicalMemory/(1024*1024),0) . " MB"
+		break
 	}
 }
 Win32_VideoController(o,&SystemGPU) {
