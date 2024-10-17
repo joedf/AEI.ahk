@@ -157,8 +157,9 @@ CheckUpdate() {
 		whr := ComObject("WinHttp.WinHttpRequest.5.1")
 		; https://learn.microsoft.com/en-us/windows/win32/winhttp/winhttprequestoption
 		whr.Option[4] := 0x3300
-		whr.Open("GET", AHK_UPDATE_URL)
+		whr.Open("GET", AHK_UPDATE_URL, true)
 		whr.Send()
+		whr.WaitForResponse()
 		UpdateVersion := whr.ResponseText
 	} catch {
 		UpdateVersion := "ERROR"
