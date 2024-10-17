@@ -150,14 +150,36 @@ CheckUpdate() {
 	CheckChar:=chr(10004), CrossChar:=chr(10008)
 	if isWinXPOrOlder()
 		CheckChar:=":)", CrossChar:="X"
+
+	; try original method
+	; could fail due cert issues
 	try {
 		whr := ComObject("WinHttp.WinHttpRequest.5.1")
+		; https://learn.microsoft.com/en-us/windows/win32/winhttp/winhttprequestoption
+		whr.Option[4] := 0x3300
 		whr.Open("GET", AHK_UPDATE_URL)
 		whr.Send()
 		UpdateVersion := whr.ResponseText
 	} catch {
 		UpdateVersion := "ERROR"
 	}
+
+	; try alternative method
+	if (UpdateVersion == "ERROR")
+	{
+		try {
+			req := ComObject("Msxml2.XMLHTTP")
+			req.open("GET", AHK_UPDATE_URL, true)
+			req.send()
+			while req.readyState != 4
+				sleep 100
+			if (req.status == 200)
+				UpdateVersion := req.responseText
+		} catch {
+			UpdateVersion := "ERROR"
+		}
+	}
+
 	if !RegExMatch(UpdateVersion,"(\d+\.){2,3}\d+") {
 		txtUpdateInfo.Text := "Check Error !"
 		txtUpdateInfo.SetFont("cRed")
@@ -284,10 +306,11 @@ isWinXPOrOlder() {
 }
 isPortable() {
 	p:=""
-	isInstalled(p)
-	return !(p "\AutoHotkey.exe" = A_AhkPath)
+	; isInstalled(&p)
+	; return !(p "\AutoHotkey.exe" = A_AhkPath)
+	return !isInstalled(&p)
 }
-isInstalled(path:="") {
+isInstalled(&path:="") {
 	InstallDir := RegRead("HKLM\SOFTWARE\AutoHotkey","InstallDir")
 	return InStr(A_AhkPath,path:=InstallDir)
 }
