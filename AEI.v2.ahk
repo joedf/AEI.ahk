@@ -184,9 +184,9 @@ OpenUpdate(*) {
 		if InStr(UpdateInfoText,"Not")
 			msgboxResult := MsgBox("No check for updates has been performed.`n" . UpdateQuestion, UpdateTitle, 0x24)
 		if InStr(UpdateInfoText,"Error")
-			MsgBox("[AEI] AutoHotkey Update, An error occurred when checking for updates.`n" . UpdateQuestion, UpdateTitle, 0x24)
-		if InStr(msgboxResult,"Yes")
-			CheckUpdate()
+			msgboxResult := MsgBox("[AEI] AutoHotkey Update, An error occurred when checking for updates.`n" . UpdateQuestion, UpdateTitle, 0x24)
+			if InStr(msgboxResult,"Yes")
+				CheckUpdate()
 	}
 	if InStr(UpdateInfoText,"Out") {
 		msgText :=
